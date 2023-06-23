@@ -10,10 +10,9 @@ from joblib import Parallel, delayed
 #%% Parameters ----------------------------------------------------------------
 
 sigma = 1
-radius = 5
-rsize_factor = 0.1
-minProm = 20
+minProm = 10
 minDist = 3
+roiRadius = 6 
 
 #%% Initialize ----------------------------------------------------------------
 
@@ -35,25 +34,45 @@ from skimage.transform import downscale_local_mean, resize
 from skimage.segmentation import expand_labels
 from skimage.measure import label
 
+# Sum projection (sumProj) for measurments
+sumProj = np.sum(stack, axis=0)
+
+# Standard projection (stdProj) for detection
 stdProj = np.std(stack, axis=0)
 stdProj = stdProj - rolling_ball(stdProj, radius=10)
-stdProj = gaussian()
+stdProj = gaussian(stdProj, sigma)
 
+# Local max detection (stdProj)
+coords = peak_local_max(
+    stdProj, min_distance=minDist, threshold_abs=minProm
+    ).astype(int)
 
+ROIs = []
+for coord in coords:
+    
+    y = coord[0]
+    x = coord[1]
+    
+    if (y - roiRadius >= 0 and y + roiRadius <= sumProj.shape[0] and 
+        x - roiRadius >= 0 and x + roiRadius <= sumProj.shape[1]):
+        
+        ROI = sumProj[y - roiRadius:y + roiRadius, x - roiRadius:x + roiRadius]
+        ROIs.append((x, y, ROI, np.sum(ROI)))
+    
+    
 
 #%% ctrd -------------------------------------------------------------------
 
-# import napari
-# viewer = napari.Viewer()
-# viewer.add_image(pStack)
-# viewer.add_labels(display)
+import napari
+viewer = napari.Viewer()
+viewer.add_image(stdProj)
+viewer.add_image(sumProj)
 
-# viewer.add_image(img)
-# points_layer = viewer.add_points(
-#     coords, 
-#     size=20,
-#     edge_width=0.1,
-#     edge_color='red',
-#     face_color='transparent',
-#     opacity = 0.5,
-#     )
+points_layer = viewer.add_points(
+    coords, 
+    size=12,
+    edge_width=0.1,
+    edge_color='red',
+    face_color='transparent',
+    opacity = 0.5,
+    )
