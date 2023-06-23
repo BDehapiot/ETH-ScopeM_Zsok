@@ -34,10 +34,10 @@ stack_names = []
 for stack_path in data_path.iterdir():
     if stack_path.is_file():
         stack_names.append(stack_path.name)
-
-#%% Measure -------------------------------------------------------------------
-
-def measure(stack_name, conds, sigma=1, minProm=10, minDist=3, roiRadius=6):
+    
+#%% Process -------------------------------------------------------------------
+    
+def process(stack_name):
 
     # Open stack
     stack = nd2.imread(Path(data_path) / stack_name)     
@@ -56,109 +56,57 @@ def measure(stack_name, conds, sigma=1, minProm=10, minDist=3, roiRadius=6):
     stdProj = cv2.subtract(stdProj, opened, dst=stdProj)
     stdProj = gaussian(stdProj, sigma)
     
-    # Local max detection
-    coords = peak_local_max(
-        stdProj, min_distance=minDist, threshold_abs=minProm
-        ).astype(int)
-    
     # Sum projection (sumProj)
     sumProj = np.sum(stack, axis=0).astype('float32')
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10))
     opened = cv2.morphologyEx(sumProj, cv2.MORPH_OPEN, kernel)
     sumProj = cv2.subtract(sumProj, opened, dst=sumProj)
     sumProj = gaussian(sumProj, sigma)
-
-    imgData = (stack_name, prot, tp, stdProj, sumProj)
-
+    
+    # Local max detection
+    coords = peak_local_max(
+        stdProj, min_distance=minDist, threshold_abs=minProm
+        ).astype(int)
+    
     # Measurments
-    dotData = []
+    dot_data = []
     for coord in coords:
-        
         y = coord[0]; x = coord[1]
-        
         if (y - roiRadius >= 1 and y + roiRadius <= sumProj.shape[0] -1 and 
             x - roiRadius >= 1 and x + roiRadius <= sumProj.shape[1] -1):       
-            
+    
             ROI = sumProj[
                 y - roiRadius:y + roiRadius + 1,
                 x - roiRadius:x + roiRadius + 1
                 ] * disk(roiRadius)
                     
-            dotData.append((stack_name, prot, tp, x, y, np.sum(ROI)))
+            dot_data.append((stack_name, prot, tp, x, y, np.sum(ROI)))
             
-    return imgData#, dotData
-
-# -----------------------------------------------------------------------------
+    stack_data = (stack_name, prot, tp, stdProj, sumProj, dot_data)
+    
+    return stack_data
 
 start = time.time()
-print('Measure')
+print('Process')
 
 # Parallel processing
 outputs = Parallel(n_jobs=-1)(
-    delayed(measure)(
+    delayed(process)(
         stack_name,
-        conds,
-        sigma=sigma,
-        minProm=minProm,
-        minDist=minDist,
-        roiRadius=roiRadius
         ) 
     for stack_name in stack_names
     )
 
-# merged_imgData = [data[0] for data in outputs]
-# merged_dotData = [data for dotData in outputs for data in dotData[1]]
+stack_data = [data for data in outputs]
+dot_data = [dot_data for data in outputs for dot_data in data[5]]
 
 end = time.time()
 print(f'  {(end-start):5.3f} s') 
-
-#%% Results -------------------------------------------------------------------
-
-# prot_name = 'Mlp1'
-
-# prot_data = [data for data in merged_dotData if data[1] == prot_name]
-# tp_points = sorted(np.unique([data[2] for data in merged_dotData]))
-# fig, ax = plt.subplots(
-#     len(tp_points), 1, figsize=(6, 2*len(tp_points)))
-
-# for i, tp_point in enumerate(tp_points):
-    
-#     intDen = [data[5] for data in merged_dotData if data[1] == prot_name and data[2] == tp_point]
-#     ax[i].hist(intDen, bins=200)
-#     ax[i].set_xlim((1e+04, 1e+05))
-#     ax[i].text(0.02, 0.94, f'{prot_name} - {tp_point}h', 
-#                fontsize=12, ha='left', va='top', transform=ax[i].transAxes)
-
+                
 #%% Display -------------------------------------------------------------------
 
-# prot_name = 'Mlp1'
-# tp_point = 0
+prot_name = 'Mlp1'
 
-
-
-# stdProj = np.stack([
-#     data[3] for data in merged_imgData
-#     if data[1] == prot_name and data[2] == tp_point
-#     ])
-
-# sumProj = np.stack([
-#     data[4] for data in merged_imgData
-#     if data[1] == prot_name and data[2] == tp_point
-#     ])
-
-
-#%% Display -------------------------------------------------------------------
-
-# import napari
-# viewer = napari.Viewer()
-# viewer.add_image(stdProj)
-# viewer.add_image(sumProj)
-
-# points_layer = viewer.add_points(
-#     coords, 
-#     size=12,
-#     edge_width=0.1,
-#     edge_color='red',
-#     face_color='transparent',
-#     opacity = 0.5,
-#     )
+stdProj = np.stack([data[3] for data in stack_data if data[1] == prot_name])
+sumProj = np.stack([data[4] for data in stack_data if data[1] == prot_name])
+ycoords = ???
