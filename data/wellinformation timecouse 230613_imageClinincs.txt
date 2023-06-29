@@ -1,0 +1,12 @@
+wellinformation timecouse 230613 
+
+K13 Mlp1 +be 9hrs	K14 Mlp2 +be 9hrs	
+L13 Mlp1 +be 5hrs	L14 Mlp2 +be 5hrs			
+M13 Mlp1 +be 3hrs	M14 Mlp2 +be 3hrs	
+
+N13 Mlp1 +be 11hrs	N14 Mlp2 +be 11hrs			
+O13 Mlp1 +be 7hrs	O14 Mlp2 +be 7hrs	
+
+
+F20 Mlp1 +be 14hrs	F21 Mlp2 +be 14hrs
+G1 Mlp1 +be 0hrs	G2 Mlp2 +be 0hrs

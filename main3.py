@@ -41,7 +41,7 @@ for stack_path in data_path.iterdir():
         
 #%% 
 
-stack_name = stack_names[1]
+stack_name = stack_names[2]
 
 # Open stack
 stack = nd2.imread(Path(data_path) / stack_name)     
@@ -119,7 +119,52 @@ for coord in coords:
         
 stack_data = (stack_name, prot, tp, stdProj, sumProj, dot_data)
 
+#%% ---------------------------------------------------------------------------
+
+from scipy.signal import find_peaks
+from scipy.signal import butter, filtfilt
+
+profiles = [data[6] for data in dot_data]
+
+plt.ion()
+for profile in profiles:
+
+    # Smooth profile (lowpass)
+    b, a = butter(4, 0.4, 'lp', output='ba')
+    profile_lp = filtfilt(b, a, profile)
     
+    # Find peaks
+    pks, prop = find_peaks(
+        profile_lp,
+        distance=1,
+        prominence=2,
+        width=1,
+        )
+
+    fig, ax = plt.subplots()
+    ax.plot(profile)
+    ax.plot(profile_lp)
+    for pk in pks:
+        ax.axvline(x=pk, color='r')      
+    # for left in prop['left_ips']:
+    #     ax.axvline(x=round(left), color='b')
+    # for right in prop['right_ips']:
+    #     ax.axvline(x=round(right), color='b')
+        
+    plt.text(
+        0, 1.025, 
+        f"peak(s)={len(pks)}\nloc={pks}\nprom={prop['prominences']}\nwidth={prop['widths']}", 
+        verticalalignment='bottom', 
+        transform=plt.gca().transAxes
+        )
+               
+    plt.draw()
+    plt.pause(0.001)
+    input("Press Enter to continue...")
+    plt.close(fig)
+
+
+
 #%% Process -------------------------------------------------------------------
     
 # def process(stack_name):
