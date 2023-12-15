@@ -5,6 +5,7 @@ import cv2
 import csv
 import time
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
@@ -113,9 +114,15 @@ for i, cond in enumerate(conds):
     ax[i].text(0.98, 0.94, f'{conds[i]} ({nProt[i]})\n{np.mean(intDen):.2f}', 
                 fontsize=12, ha='right', va='top', transform=ax[i].transAxes)
     
+# 
+dot_dataframe = pd.DataFrame(
+    dot_data, columns=["stack_name", "date", "cond", "numb", "x", "y", "int"]
+    )
+dot_dataframe.to_csv('results.csv', index=False)
+    
 #%% Displays ------------------------------------------------------------------
 
-showCond = "Nup96"
+showCond = "Mlp1"
 
 # Extract processed images & info
 names = [data[0] for data in stack_data if data[2] == showCond]
