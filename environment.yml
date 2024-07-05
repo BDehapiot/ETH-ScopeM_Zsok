@@ -2,14 +2,24 @@ name: Zsok
 
 channels:
   - conda-forge
-      
+
 dependencies:
+  # conda_core
   - python=3.10
   - numpy=1.23
   - scipy
-  - scikit-image
   - pandas
+  - scikit-image
   - opencv
+  - scikit-learn
   - joblib
   - matplotlib-base=3.6
+  - pip
+  # conda_spec
   - nd2
+  - napari
+  - pyqt
+  - spyder
+  - pip:
+    # pip_core
+    # pip_spec
